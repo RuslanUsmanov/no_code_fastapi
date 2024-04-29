@@ -107,3 +107,5 @@ class TaskRun(BaseModel):
     finished_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime, nullable=True, default=None
     )
+
+    task: Mapped["Task"] = relationship(init=False, lazy="immediate")
