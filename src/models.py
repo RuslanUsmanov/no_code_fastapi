@@ -1,6 +1,7 @@
+from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import DateTime, ForeignKey, String, func
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
@@ -15,6 +16,8 @@ class Base(DeclarativeBase, MappedAsDataclass):
 
 
 class BaseModel(Base):
+    """Базовая модель для таблиц"""
+
     __abstract__ = True
     id: Mapped[int] = mapped_column(
         primary_key=True,
@@ -26,9 +29,7 @@ class BaseModel(Base):
 
 
 class Pipeline(BaseModel):
-    """
-    Таблица для хранения пайплайнов
-    """
+    """Таблица для хранения пайплайнов"""
 
     __tablename__ = "pipelines"
     name: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -37,17 +38,13 @@ class Pipeline(BaseModel):
     )
     tasks: Mapped[list["Task"]] = relationship(
         secondary="pipeline_tasks",
-        lazy="subquery",
+        lazy="immediate",
         order_by="PipelineTask.order",  # Сортируем по порядку в пайплайне
     )
 
 
 class Task(BaseModel):
-    """
-    Таблица для хранения задач, из которых собираются пайплайны
-
-    :param paprameters: параметры задачи
-    """
+    """Таблица для хранения задач, из которых собираются пайплайны"""
 
     __tablename__ = "tasks"
     name: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -58,10 +55,9 @@ class Task(BaseModel):
 
 
 class PipelineTask(Base):
-    """
-    Промежуточная таблица для связи пайплайнов и задач через связь M2M
+    """Промежуточная таблица для связи пайплайнов и задач через связь M2M
 
-    :param order: порядок выполнения задачи в пайплайне
+    :param int order: порядок выполнения задачи в пайплайне
     """
 
     __tablename__ = "pipeline_tasks"
@@ -73,3 +69,41 @@ class PipelineTask(Base):
         primary_key=True,
     )
     order: Mapped[int] = mapped_column(nullable=False)
+
+
+class PipelineRun(BaseModel):
+    """Таблица для хранения запусков пайплайнов"""
+
+    __tablename__ = "pipeline_runs"
+    pipeline_id: Mapped[int] = mapped_column(
+        ForeignKey("pipelines.id", ondelete="CASCADE"), nullable=False
+    )
+    status: Mapped[str] = mapped_column(nullable=False)
+    started_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=func.now()
+    )
+    finished_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, nullable=True, default=None
+    )
+    result: Mapped[Optional[str]] = mapped_column(nullable=True, default=None)
+
+    tasks: Mapped[list["TaskRun"]] = relationship(lazy="immediate", init=False)
+
+
+class TaskRun(BaseModel):
+    """Таблица для хранения запусков задач"""
+
+    __tablename__ = "task_runs"
+    pipelinerun_id: Mapped[int] = mapped_column(
+        ForeignKey("pipeline_runs.id", ondelete="CASCADE"), nullable=False
+    )
+    task_id: Mapped[int] = mapped_column(
+        ForeignKey("tasks.id", ondelete="SET NULL"), nullable=False
+    )
+    status: Mapped[str] = mapped_column(nullable=False)
+    started_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=func.now()
+    )
+    finished_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, nullable=True, default=None
+    )
