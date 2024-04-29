@@ -13,6 +13,32 @@ class Status(str, Enum):
     failed = "failed"
 
 
+class PipelineBase(BaseModel):
+    name: str
+    description: str
+
+
+class Pipeline(PipelineBase):
+    id: int
+    tasks: list["Task"]
+
+    class Config:
+        from_attributes = True
+
+
+class TaskBase(BaseModel):
+    name: str
+    service: str
+    parameters: str | None = None
+
+
+class Task(TaskBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+
+
 class TaskRun(BaseModel):
     """Запуски задач по конкретному запуску пайплайна"""
 
@@ -22,6 +48,7 @@ class TaskRun(BaseModel):
     status: Status
     started_at: datetime
     finished_at: datetime | None
+    task: Task
 
     class Config:
         from_attributes = True
