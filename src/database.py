@@ -18,10 +18,18 @@ engine_async = create_async_engine(DB_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 SessionLocalAsync = sessionmaker(
-    autocommit=False, autoflush=False, bind=engine_async, class_=AsyncSession
+    autocommit=False,
+    autoflush=False,
+    bind=engine_async,
+    class_=AsyncSession,
+    expire_on_commit=False,
 )
 
 
 async def get_db_async():
+    """Генератор асинхронных сессий БД
+
+    :yield AsyncSession: сессия БД
+    """
     async with SessionLocalAsync() as session:
         yield session
