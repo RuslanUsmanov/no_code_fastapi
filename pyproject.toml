@@ -14,8 +14,8 @@ psycopg = {extras = ["binary"], version = "^3.1.18"}
 uvicorn = "^0.29.0"
 alembic = "^1.13.1"
 numpy = "^1.26.4"
-opencv-python = "^4.9.0.80"
 aio-pika = "^9.4.1"
+opencv-python-headless = "^4.9.0.80"
 
 
 [build-system]
